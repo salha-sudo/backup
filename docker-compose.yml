@@ -1,0 +1,78 @@
+services:
+  # Serveur de dépôt restic en mode "append-only" : on peut ajouter des sauvegardes,
+  # mais PAS supprimer/modifier les données existantes (protection anti-ransomware).
+  rest-server:
+    image: restic/rest-server:latest
+    user: "0:0"
+    entrypoint: ["rest-server"]
+    command:
+      - --path=/data
+      - --listen=:8000
+      - --htpasswd-file=/etc/rest-server/.htpasswd
+      - --append-only
+      - --tls
+      - --tls-cert=/certs/public.crt
+      - --tls-key=/certs/private.key
+      - --prometheus
+      - --prometheus-no-auth
+    volumes:
+      - rest-data:/data
+      - ./rest/.htpasswd:/etc/rest-server/.htpasswd:ro
+      - ./certs:/certs:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  # Instance d'administration (SANS append-only), démarrée seulement pendant la maintenance.
+  rest-server-admin:
+    image: restic/rest-server:latest
+    profiles: ["admin"]
+    user: "0:0"
+    entrypoint: ["rest-server"]
+    command:
+      - --path=/data
+      - --listen=:8001
+      - --htpasswd-file=/etc/rest-server/.htpasswd
+      - --tls
+      - --tls-cert=/certs/public.crt
+      - --tls-key=/certs/private.key
+    volumes:
+      - rest-data:/data
+      - ./rest/.htpasswd:/etc/rest-server/.htpasswd:ro
+      - ./certs:/certs:ro
+    ports:
+      - "127.0.0.1:8001:8001"
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    command:
+      - --collector.textfile.directory=/textfile
+    volumes:
+      - /var/lib/backup-metrics:/textfile:ro
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prom-data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+
+volumes:
+  rest-data:
+  prom-data:
+  grafana-data:

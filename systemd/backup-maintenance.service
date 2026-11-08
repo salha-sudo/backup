@@ -1,0 +1,7 @@
+[Unit]
+Description=Maintenance restic (retention + integrite)
+
+[Service]
+Environment=HOME=/root
+Type=oneshot
+ExecStart=/opt/backup-platform/scripts/maintenance.sh

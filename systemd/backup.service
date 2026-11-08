@@ -1,0 +1,8 @@
+[Unit]
+Description=Sauvegarde restic locale
+After=network-online.target docker.service
+
+[Service]
+Environment=HOME=/root
+Type=oneshot
+ExecStart=/opt/backup-platform/scripts/backup.sh

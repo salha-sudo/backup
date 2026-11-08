@@ -1,0 +1,8 @@
+[Unit]
+Description=Copie hors site vers Azure
+After=network-online.target backup.service
+
+[Service]
+Environment=HOME=/root
+Type=oneshot
+ExecStart=/opt/backup-platform/scripts/offsite-sync.sh

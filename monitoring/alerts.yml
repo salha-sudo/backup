@@ -1,0 +1,33 @@
+groups:
+  - name: backup
+    rules:
+      - alert: BackupFailed
+        expr: backup_last_status == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "La dernière sauvegarde locale a échoué"}
+      - alert: BackupTooOld
+        expr: time() - backup_last_success_timestamp_seconds > 86400
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Aucune sauvegarde réussie depuis plus de 24 h (RPO dépassé)"}
+      - alert: BackupMetricMissing
+        expr: absent(backup_last_status)
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Aucune métrique de sauvegarde reçue"}
+      - alert: OffsiteCopyFailed
+        expr: offsite_last_status == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "La copie hors site vers Azure a échoué"}
+      - alert: OffsiteCopyTooOld
+        expr: time() - offsite_last_success_timestamp_seconds > 172800
+        for: 5m
+        labels: {severity: warning}
+        annotations: {summary: "Pas de copie hors site réussie depuis plus de 48 h"}
+      - alert: RestServerDown
+        expr: up{job="rest-server"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations: {summary: "Le serveur de sauvegarde (rest-server) est inaccessible"}
